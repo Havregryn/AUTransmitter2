@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="18122" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" customObjectInstantitationMethod="direct">
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="18122"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <customObject id="-2" userLabel="File's Owner" customClass="AudioUnitViewController" customModule="AUInstrument" customModuleProvider="target">
+            <connections>
+                <outlet property="view" destination="rt4-mF-UHZ" id="yQz-9n-eLV"/>
+            </connections>
+        </customObject>
+        <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
+        <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <view id="rt4-mF-UHZ">
+            <rect key="frame" x="0.0" y="0.0" width="776" height="404"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <customView wantsLayer="YES" translatesAutoresizingMaskIntoConstraints="NO" id="c22-O7-iKe">
+                    <rect key="frame" x="0.0" y="0.0" width="776" height="404"/>
+                    <subviews>
+                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="PKN-UP-9Sb">
+                            <rect key="frame" x="306" y="375" width="164" height="21"/>
+                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Grims Receiver v2 " id="3Nv-6R-78a">
+                                <font key="font" metaFont="systemBold" size="18"/>
+                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                        </textField>
+                        <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Dbt-8e-Oyc">
+                            <rect key="frame" x="340" y="323" width="96" height="21"/>
+                            <constraints>
+                                <constraint firstAttribute="width" constant="96" id="goL-A9-0zf"/>
+                            </constraints>
+                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" id="X3e-Sc-3Ic">
+                                <font key="font" metaFont="system"/>
+                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                        </textField>
+                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="epq-gi-KN1">
+                            <rect key="frame" x="358" y="299" width="61" height="16"/>
+                            <textFieldCell key="cell" lineBreakMode="clipping" title="PORT NR" id="RuF-np-2Mz">
+                                <font key="font" metaFont="system"/>
+                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                        </textField>
+                        <textField verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="aJW-Qg-oLK">
+                            <rect key="frame" x="311" y="260" width="154" height="21"/>
+                            <constraints>
+                                <constraint firstAttribute="width" constant="154" id="9aD-Ab-wJl"/>
+                            </constraints>
+                            <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" id="Mj9-Vh-Y6f">
+                                <font key="font" metaFont="system"/>
+                                <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                        </textField>
+                        <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="soo-T9-6X1">
+                            <rect key="frame" x="348" y="236" width="80" height="16"/>
+                            <textFieldCell key="cell" lineBreakMode="clipping" title="IP ADDRESS" id="6ge-pi-bic">
+                                <font key="font" metaFont="system"/>
+                                <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                            </textFieldCell>
+                        </textField>
+                    </subviews>
+                    <constraints>
+                        <constraint firstItem="soo-T9-6X1" firstAttribute="top" secondItem="aJW-Qg-oLK" secondAttribute="bottom" constant="8" symbolic="YES" id="6Ck-fx-tv6"/>
+                        <constraint firstItem="PKN-UP-9Sb" firstAttribute="top" secondItem="c22-O7-iKe" secondAttribute="top" constant="8" id="FiW-jk-aHf"/>
+                        <constraint firstItem="Dbt-8e-Oyc" firstAttribute="centerX" secondItem="epq-gi-KN1" secondAttribute="centerX" id="GAY-Aj-lfR"/>
+                        <constraint firstItem="PKN-UP-9Sb" firstAttribute="centerX" secondItem="Dbt-8e-Oyc" secondAttribute="centerX" id="Kjw-n7-DCb"/>
+                        <constraint firstItem="Dbt-8e-Oyc" firstAttribute="top" secondItem="PKN-UP-9Sb" secondAttribute="bottom" constant="31" id="N13-26-qkd"/>
+                        <constraint firstItem="PKN-UP-9Sb" firstAttribute="centerX" secondItem="c22-O7-iKe" secondAttribute="centerX" id="OAX-gx-Sa3"/>
+                        <constraint firstItem="epq-gi-KN1" firstAttribute="centerX" secondItem="aJW-Qg-oLK" secondAttribute="centerX" id="Sor-mh-O7H"/>
+                        <constraint firstItem="epq-gi-KN1" firstAttribute="top" secondItem="Dbt-8e-Oyc" secondAttribute="bottom" constant="8" symbolic="YES" id="fHA-AK-XJA"/>
+                        <constraint firstItem="aJW-Qg-oLK" firstAttribute="centerX" secondItem="soo-T9-6X1" secondAttribute="centerX" id="rdn-cG-uFN"/>
+                        <constraint firstItem="aJW-Qg-oLK" firstAttribute="top" secondItem="epq-gi-KN1" secondAttribute="bottom" constant="18" id="yWu-EW-mMx"/>
+                    </constraints>
+                </customView>
+            </subviews>
+            <constraints>
+                <constraint firstAttribute="trailing" secondItem="c22-O7-iKe" secondAttribute="trailing" id="Q4m-z3-4th"/>
+                <constraint firstAttribute="bottom" secondItem="c22-O7-iKe" secondAttribute="bottom" id="Smg-tf-HYR"/>
+                <constraint firstItem="c22-O7-iKe" firstAttribute="top" secondItem="rt4-mF-UHZ" secondAttribute="top" id="Yh1-hR-H5m"/>
+                <constraint firstItem="c22-O7-iKe" firstAttribute="leading" secondItem="rt4-mF-UHZ" secondAttribute="leading" id="zBc-Qs-o70"/>
+            </constraints>
+            <point key="canvasLocation" x="370" y="-238"/>
+        </view>
+    </objects>
+</document>
