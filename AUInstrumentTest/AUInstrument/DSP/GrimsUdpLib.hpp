@@ -23,18 +23,20 @@
 #include <fcntl.h>
 
 
-#define RECEIVER_PORT "4968" // Transmitters must connect to this port!
+#define RECEIVER_PORT "4973" // Transmitters must connect to this port!
 #define MAX_CHANNELS 2
-#define SAMPLES_PR_MSG 4096
-#define MSG_BUFS 16
-#define MSG_PTRS 8
+#define FRAMES_PR_MSG 1024
+#define MSG_BUFS 1024
+#define MSG_PTRS 1024
+
+#define MSGS_BUFFERED 4
 
 struct audioMsg {
     uint16_t seqNr;
     uint16_t framesCount;
-    uint16_t channel;
-    int audioBufIx;
-    float* audioBuf;
+    uint16_t channels;
+    int audioBufIx[MAX_CHANNELS];
+    float* audioBuf[MAX_CHANNELS];
 };
 
 
@@ -44,16 +46,21 @@ public:
     
     void init(int channelCount){
         this->channelCount = channelCount;
+        printf("Channelcount: %d\n", channelCount);
         if(!socketIsOpen) {createSocket();}
         for(int ch = 0; ch < MAX_CHANNELS; ch++) {
             for(int i = 0; i < MSG_PTRS; i++) {
-                msgRcvd[ch][i].audioBuf = NULL;
+                msgRcvd[i].audioBuf[ch] = NULL;
+                msgRcvd[i].audioBufIx[ch] = 0;
+                
             }
+            nowPlayedSeqNr[ch] = 0;
          }
-        for(int i = 0; i < MSG_BUFS; i++) {
-        }
-        nowPlayedSeqNr = 0;
         maxSeqNrRcvd = -1;
+        hasStartedPlaying = false;
+        packetsRcvd = 0;
+        msgRingBufUsed = 0;
+        msgsInBuffer = 0;
     }
     
     void receive() {
@@ -62,31 +69,54 @@ public:
         if(sockfd > 0) {
             numbytes = recv(sockfd, msgBuf, msgBufSize, 0);
             if(numbytes > 0) {
+                
+                packetsRcvd++;
+                msgRingBufUsed++;
+                
                 currentMsgBufIx = 0;
                 memcpy(&seqNrRcvd, msgBuf, sizeof(uint16_t));
                 currentMsgBufIx += sizeof(uint16_t);
+                //if(packetsRcvd < 100) printf("Received seqNr: %d\n", seqNrRcvd);
                 
                 memcpy(&framesRcvd, &msgBuf[currentMsgBufIx], sizeof(uint16_t));
                 currentMsgBufIx += sizeof(uint16_t);
                 
-                memcpy(&channelRcvd, &msgBuf[currentMsgBufIx], sizeof(uint16_t));
+                memcpy(&channelsRcvd, &msgBuf[currentMsgBufIx], sizeof(uint16_t));
                 currentMsgBufIx += sizeof(uint16_t);
+                
+                
+                /*
+                if(packetsRcvd < 10){
+                    printf("Msg no %d rcvd, seqNr: %d,  frCnt: %d, ch: %d bytes: %d\n",
+                           (int)packetsRcvd, seqNrRcvd, framesRcvd, channelsRcvd, (int)numbytes);
+                }
+                 */
+                
                 
                 
                 if(seqNrRcvd > maxSeqNrRcvd) {maxSeqNrRcvd = seqNrRcvd; }
                 // If nothing has been played yet nowPlayedSeqNr must be updated
                 // to the correct start seqNr:
-                if(nowPlayedSeqNr == 0) {nowPlayedSeqNr = seqNrRcvd; }
+                if(packetsRcvd == 1) {
+                    for(int ch = 0; ch < channelsRcvd; ch++) {
+                        nowPlayedSeqNr[ch] = seqNrRcvd;
+                    }
+                }
                 
-                struct audioMsg* msg = &msgRcvd[channelRcvd][seqNrRcvd % MSG_PTRS];
+                struct audioMsg* msg = &msgRcvd[seqNrRcvd % MSG_PTRS];
                 
                 msg->seqNr = seqNrRcvd;
                 msg->framesCount = framesRcvd;
-                msg->channel = channelRcvd;
-                msg->audioBufIx = 0;
-                msg->audioBuf = (float *) &msgBuf[currentMsgBufIx];
+                msg->channels = channelsRcvd;
+                for(int ch = 0; ch < channelsRcvd; ch++) {
+                    msg->audioBufIx[ch] = 0;
+                    msg->audioBuf[ch] = (float *) &msgBuf[currentMsgBufIx];
+                    currentMsgBufIx += (framesRcvd * sizeof(float));
+                }
+                // Det som kommer herfra er rent, blir distorted senere i kjeden:
                 
                 msgRingBufIx = ++msgRingBufIx % MSG_BUFS;
+                msgsInBuffer++;
             }
         }
     }
@@ -94,49 +124,49 @@ public:
     void receiveAndGetSample(float* outBuf, int frameOffset, int channel) {
         // Kalles inni frameloop inni channel loop
         
-        nowPlayedMsg = &msgRcvd[channel][nowPlayedSeqNr % MSG_PTRS];
-    
-        // PART I : AUDIO IS READY IN BUFFER:
         
-        if(nowPlayedMsg->audioBuf != NULL) {
-            
+        if(msgsInBuffer < MSGS_BUFFERED) receive();
+        
+        
+        // Building a buffer before starting to play:
+        if(packetsRcvd < MSGS_BUFFERED) {
+            outBuf[frameOffset] = 0.0f;
+            return;
+        }
+        
+       
+        
+        if(!hasStartedPlaying) { hasStartedPlaying = true; }
+        
+        nowPlayedMsg = &msgRcvd[nowPlayedSeqNr[channel] % MSG_PTRS];
+    
+        if(nowPlayedMsg->audioBuf[channel] != NULL) {
             // nowPlayedMsg contains the sample we need now.
             // Deliver this sample, update counters/pointers and return:
-            outBuf[frameOffset] = nowPlayedMsg->audioBuf[audioBufIx];
+            outBuf[frameOffset] = nowPlayedMsg->audioBuf[channel][nowPlayedMsg->audioBufIx[channel]];
             
-            if(audioBufIx == nowPlayedMsg->framesCount - 1) {
-                // The last sample of this messsage has been read:
-                nowPlayedMsg->audioBuf = NULL;
+            
+            if(nowPlayedMsg->audioBufIx[channel] == nowPlayedMsg->framesCount - 1) {
+                // The last sample of this channel has been read:
+                nowPlayedMsg->audioBuf[channel] = NULL;
                 
-                // Hardcoded channel number:
-                if(channel == 1) {
-                    audioBufIx = 0;
-                    nowPlayedSeqNr = ++nowPlayedSeqNr % UINT16_MAX;
-                }
-            } else if(channel == 1) {
-                // Last channel but not last sample in the message:
-                audioBufIx++;
+                nowPlayedSeqNr[channel] = ++nowPlayedSeqNr[channel] % UINT16_MAX;
+                msgRingBufUsed--;
+                msgsInBuffer--;
+                
+            } else {
+                nowPlayedMsg->audioBufIx[channel]++;
             }
             return;
-            
         }
         
-        // PART II: NO AUDIO IN BUFFER: NEW MESSAGE IS NEEDED!:
         
-        // audioBufIx = 0: Need a new msg to read from:
-        for(int rpt = 0; rpt < 2; rpt++) {
-            receive();
-        }
-        
-        // Play if msg is found, otherwise return silence:
-        if(nowPlayedMsg->audioBuf != NULL) {
-            outBuf[frameOffset] = nowPlayedMsg->audioBuf[audioBufIx];
-            // This must be the first frame of the msg, we need only a simple counter update:
-            if(channel == channelCount - 1) { audioBufIx++; }
-        } else {
-            outBuf[frameOffset] = 0.0f;
-        }
+        // Default: Play silence
+        outBuf[frameOffset] = 0.0f;
     }
+    
+    
+    
     
     void deallocate(){
         close(sockfd);
@@ -154,28 +184,34 @@ private:
     socklen_t addr_len;
     
     // Audio related properties:
-    static const int msgBufSize = (sizeof(float) * SAMPLES_PR_MSG) + (sizeof(int) * 10);
+    static const int msgBufSize = (sizeof(float) * FRAMES_PR_MSG * MAX_CHANNELS) + (sizeof(int) * 10);
     char msgRingBuf[MSG_BUFS][msgBufSize];
     int msgRingBufIx;
+    int msgRingBufUsed;
     
     // Pointer array, connecting seqNr with relevant msg buffer:
-    struct audioMsg msgRcvd[MAX_CHANNELS][MSG_PTRS];
+    struct audioMsg msgRcvd[MSG_PTRS];
     
-    int nowPlayedSeqNr;
+    int nowPlayedSeqNr[MAX_CHANNELS];
     int maxSeqNrRcvd;
     
     uint16_t seqNrRcvd;
-    uint16_t channelRcvd;
+    uint16_t channelsRcvd;
     uint16_t framesRcvd;
     
     struct audioMsg *nowPlayedMsg;
     int currentMsgBufIx;
-    int audioBufIx; // Used when reading samples from msg audio bufs.
     
     
     int channelCount = 0;
     
+    bool hasStartedPlaying;
+    int packetsRcvd;
+    
+    int msgsInBuffer;
+    
     bool debugprinted = false;
+    
     
     
     
